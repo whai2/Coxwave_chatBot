@@ -1,0 +1,29 @@
+{
+  "name": "coxwave",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "server": "nodemon server.js",
+    "start": "node server.js",
+    "build": "npm install"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.20.3",
+    "chokidar": "^4.0.1",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1",
+    "picklejs": "^0.101.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.7"
+  },
+  "directories": {
+    "doc": "docs"
+  }
+}
