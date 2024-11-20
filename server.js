@@ -4,6 +4,8 @@ import dotenv from "dotenv";
 
 import queryRoutes from "./src/routes/query.routes.js";
 
+import convertPklToJson from "./src/llmChain/llmChain.js";
+
 dotenv.config();
 
 const PORT = process.env.PORT || 3000;
