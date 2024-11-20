@@ -1,7 +1,8 @@
 import express from "express";
 import events from "events";
-
 import dotenv from "dotenv";
+
+import queryRoutes from "./src/routes/query.routes.js";
 
 dotenv.config();
 
@@ -12,6 +13,8 @@ events.EventEmitter.defaultMaxListeners = 20;
 const app = express();
 
 app.use(express.json());
+
+app.use("/api/query", queryRoutes);
 
 app.listen(PORT, () => {
   console.log(`server Running on ${PORT}`);
