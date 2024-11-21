@@ -1,31 +1,63 @@
 import OpenAI from "openai";
-import { ChromaClient } from "chromadb";
+import { ChromaClient, OpenAIEmbeddingFunction } from "chromadb";
 
 class VectorStore {
-  constructor(openaiApiKey, vectorDbUrl, collectionName) {
+  constructor(
+    openaiApiKey,
+    vectorDbUrl,
+    questionCollectionName,
+    answerCollectionName
+  ) {
     this.openai = new OpenAI({ apiKey: openaiApiKey });
+    this.embeddingFunction = new OpenAIEmbeddingFunction({
+      openai_api_key: openaiApiKey,
+      model: "text-embedding-3-small",
+    });
 
     this.client = new ChromaClient({ host: vectorDbUrl });
-    this.collectionName = collectionName;
-    this.collection = null;
+    this.questionCollectionName = questionCollectionName;
+    this.answerCollectionName = answerCollectionName;
+    this.questionCollection = null;
+    this.answerCollection = null;
   }
 
-  async initializeCollection() {
+  async #initializeQuestionCollection() {
     try {
-      if (!this.collection) {
-        this.collection = await this.client.getOrCreateCollection({
-          name: this.collectionName,
+      if (!this.questionCollection) {
+        this.questionCollection = await this.client.getOrCreateCollection({
+          name: this.questionCollectionName,
+          embeddingFunction: this.embeddingFunction,
         });
 
-        console.log(`Collection '${this.collectionName}' initialized.`);
+        console.log(`Collection '${this.questionCollectionName}' initialized.`);
       }
+
+      return this.questionCollection;
     } catch (error) {
-      console.error("Error initializing collection:", error.message);
-      throw new Error("Failed to initialize collection");
+      console.error("Error initializing questionCollection:", error.message);
+      throw new Error("Failed to initialize questionCollection");
     }
   }
 
-  async generateEmbedding(text) {
+  async #initializeAnswerCollection() {
+    try {
+      if (!this.answerCollection) {
+        this.answerCollection = await this.client.getOrCreateCollection({
+          name: this.answerCollectionName,
+          embeddingFunction: this.embeddingFunction,
+        });
+
+        console.log(`Collection '${this.answerCollectionName}' initialized.`);
+      }
+
+      return this.answerCollection;
+    } catch (error) {
+      console.error("Error initializing answerCollection:", error.message);
+      throw new Error("Failed to initialize answerCollection");
+    }
+  }
+
+  async #generateEmbedding(text) {
     try {
       const response = await this.openai.embeddings.create({
         model: "text-embedding-ada-002",
@@ -38,35 +70,87 @@ class VectorStore {
     }
   }
 
-  async saveData(processedData) {
+  async saveQuestionData(processedData) {
     try {
-      await this.initializeCollection();
+      const currentCollection = await this.#initializeQuestionCollection();
 
-      for (const item of processedData) {
-        const questionEmbedding = await this.generateEmbedding(item.question);
+      const questions = processedData.map((item) => item.question);
+      const metadatas = processedData.map((item) => ({
+        relatedHelp: item.relatedHelp || null,
+        id: item.id,
+      }));
+      const ids = processedData.map((item) => item.id);
 
-        // 각 답변 청크의 임베딩 생성
-        const answerChunks = item.answerChunks || [];
-        const chunkEmbeddings = await Promise.all(
-          answerChunks.map((chunk) => this.generateEmbedding(chunk))
-        );
-
-        // ChromaDB에 데이터 추가
-        await this.collection.add({
-          documents: answerChunks,
-          metadatas: answerChunks.map((chunk, idx) => ({
-            question: item.question,
-            chunkIndex: idx,
-          })),
-          ids: answerChunks.map((_, idx) => `${item.id}_chunk_${idx}`),
-          embeddings: chunkEmbeddings,
-        });
-
-        console.log(`Data for question "${item.question}" added to ChromaDB.`);
-      }
+      await currentCollection.add({
+        documents: questions,
+        metadatas: metadatas,
+        ids: ids,
+      });
     } catch (error) {
-      console.error("Error saving data to ChromaDB:", error.message);
-      throw new Error("Failed to save data to ChromaDB");
+      console.error("Error saving question data to ChromaDB:", error.message);
+      throw new Error("Failed to save question data to ChromaDB");
+    }
+  }
+
+  async saveAnswersData(processedData) {
+    try {
+      const currentCollection = await this.#initializeAnswerCollection();
+
+      const answerChunks = processedData
+        .map((item) => item.answerChunks)
+        .flat();
+      const metadatas = processedData.flatMap((item) =>
+        item.answerChunks.map(() => ({
+          questions: item.question,
+          id: item.id,
+        }))
+      );
+      const ids = processedData.flatMap((item, itemIndex) =>
+        item.answerChunks.map((_, chunkIndex) => `${item.id}-${chunkIndex}`)
+      );
+
+      await currentCollection.add({
+        documents: answerChunks,
+        metadatas: metadatas,
+        ids: ids,
+      });
+    } catch (error) {
+      console.error("Error saving answers data to ChromaDB:", error.message);
+      throw new Error("Failed to save answers data to ChromaDB");
+    }
+  }
+
+  async queryData(userQuery) {
+    try {
+      const currentCollection = await this.#initializeQuestionCollection();
+
+      const results = await currentCollection.query({
+        queryTexts: [userQuery],
+        nResults: 20, // to be reRank
+      });
+
+      console.log("Query Results:", results);
+    } catch (error) {
+      console.error("Error querying data:", error.message);
+    }
+  }
+
+  async checkCollectionStatus(collection = "question") {
+    let currentCollection;
+    if (collection === "question") {
+      currentCollection = await this.#initializeQuestionCollection();
+    } else {
+      currentCollection = await this.#initializeAnswerCollection();
+    }
+
+    try {
+      const collectionInfo = await currentCollection.get({
+        nResults: 20,
+      });
+
+      return collectionInfo;
+    } catch (error) {
+      console.error("Error checking collection status:", error.message);
     }
   }
 }

@@ -18,7 +18,7 @@ const dataLoader = new DataLoader(filePath);
 const loadedData = dataLoader.loadData();
 
 const splitter = new TextSplitter();
-export const processedData = splitter.splitText(loadedData);
+const processedData = splitter.splitText(loadedData);
 
 // json save
 if (!fs.existsSync(outputFilePath)) {
@@ -36,10 +36,13 @@ if (!fs.existsSync(outputFilePath)) {
 const vectorStore = new VectorStore(
   process.env.OPENAI_API_KEY,
   process.env.VECTOR_DB_URL,
-  process.env.VECTOR_DB_COLLECTION_NAME
+  process.env.VECTOR_DB_QUESTION_COLLECTION_NAME,
+  process.env.VECTOR_DB_ANSWER_COLLECTION_NAME
 );
-// await vectorStore.saveData(processedData);
+export const limitedData = processedData.slice(0, 20);
+await vectorStore.saveQuestionData(limitedData);
+export const result = await vectorStore.saveAnswersData(limitedData);
+export const queryResult = await vectorStore.checkCollectionStatus("answers");
+// await vectorStore.queryData("안녕?")
 
 // retrieval
-
-export const cleanData = dataLoader.cleanData(loadedData);

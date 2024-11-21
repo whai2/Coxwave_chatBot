@@ -9,7 +9,9 @@ class TextSplitter {
       const processedData = [];
 
       // 데이터 순회하며 분리
-      for (const [question, answer] of Object.entries(data)) {
+      for (const [index, [question, answer]] of Object.entries(
+        data
+      ).entries()) {
         const relatedHelpMatch = answer.match(/관련 도움말\/키워드.*$/s);
         const relatedHelp = relatedHelpMatch
           ? relatedHelpMatch[0].replace("관련 도움말/키워드", "").trim()
@@ -42,7 +44,10 @@ class TextSplitter {
           answerChunks.push(currentChunk.trim());
         }
 
+        const id = `${index + 1}`;
+
         processedData.push({
+          id,
           question,
           answerChunks,
           relatedHelp,
