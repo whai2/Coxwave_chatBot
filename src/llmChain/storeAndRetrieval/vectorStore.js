@@ -6,7 +6,8 @@ class VectorStore {
     openaiApiKey,
     vectorDbUrl,
     questionCollectionName,
-    answerCollectionName
+    answerCollectionName,
+    processedData
   ) {
     this.openai = new OpenAI({ apiKey: openaiApiKey });
     this.embeddingFunction = new OpenAIEmbeddingFunction({
@@ -19,6 +20,8 @@ class VectorStore {
     this.answerCollectionName = answerCollectionName;
     this.questionCollection = null;
     this.answerCollection = null;
+
+    this.processedData = processedData;
   }
 
   async #initializeQuestionCollection() {
@@ -70,18 +73,32 @@ class VectorStore {
     }
   }
 
-  async saveQuestionData(processedData) {
+  async saveQuestionData() {
     try {
-      const currentCollection = await this.#initializeQuestionCollection();
+      await this.#initializeQuestionCollection();
 
-      const questions = processedData.map((item) => item.question);
-      const metadatas = processedData.map((item) => ({
+      // 존재할 경우, 재 임베딩 금지
+      const existingIds = new Set(
+        (await this.questionCollection.get()).ids.flat()
+      );
+      const newQuestions = this.processedData.filter(
+        (item) => !existingIds.has(item.id)
+      );
+
+      if (newQuestions.length === 0) {
+        console.log("All questions already exist in the question collection. Skipping.");
+        return;
+      }
+
+      // 처음인 경우
+      const questions = this.processedData.map((item) => item.question);
+      const metadatas = this.processedData.map((item) => ({
         relatedHelp: item.relatedHelp || null,
         id: item.id,
       }));
-      const ids = processedData.map((item) => item.id);
+      const ids = this.processedData.map((item) => item.id);
 
-      await currentCollection.add({
+      await this.questionCollection.add({
         documents: questions,
         metadatas: metadatas,
         ids: ids,
@@ -92,24 +109,47 @@ class VectorStore {
     }
   }
 
-  async saveAnswersData(processedData) {
+  async saveAnswersData() {
     try {
-      const currentCollection = await this.#initializeAnswerCollection();
+      await this.#initializeAnswerCollection();
 
-      const answerChunks = processedData
+      // 존재할 경우, 재 임베딩 금지
+      const existingIds = new Set(
+        (await this.answerCollection.get()).ids.flat()
+      );
+      const filteredData = this.processedData
+        .flatMap((item) =>
+          item.answerChunks.map((chunk, index) => ({
+            document: chunk,
+            metadata: {
+              questions: item.question,
+              id: item.id,
+            },
+            id: `${item.id}-${index}`,
+          }))
+        )
+        .filter((item) => !existingIds.has(item.id));
+
+      if (filteredData.length === 0) {
+        console.log("All answers already exist in the answer collection. Skipping.");
+        return; // 얼리 리턴
+      }
+
+      // 처음인 경우
+      const answerChunks = this.processedData
         .map((item) => item.answerChunks)
         .flat();
-      const metadatas = processedData.flatMap((item) =>
+      const metadatas = this.processedData.flatMap((item) =>
         item.answerChunks.map(() => ({
           questions: item.question,
           id: item.id,
         }))
       );
-      const ids = processedData.flatMap((item, itemIndex) =>
+      const ids = this.processedData.flatMap((item, itemIndex) =>
         item.answerChunks.map((_, chunkIndex) => `${item.id}-${chunkIndex}`)
       );
 
-      await currentCollection.add({
+      await this.answerCollection.add({
         documents: answerChunks,
         metadatas: metadatas,
         ids: ids,
@@ -122,9 +162,7 @@ class VectorStore {
 
   async queryData(userQuery) {
     try {
-      const currentCollection = await this.#initializeQuestionCollection();
-
-      const results = await currentCollection.query({
+      const results = await this.questionCollection.query({
         queryTexts: [userQuery],
         nResults: 20, // to be reRank
       });
