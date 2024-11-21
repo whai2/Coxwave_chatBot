@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 import fs from "fs";
 
 import { DataLoader, TextSplitter } from "./preProcess/index.js";
-import { VectorStore } from "./storeAndRetrieval/index.js";
+import { VectorStore, BM25Search } from "./storeAndRetrieval/index.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -13,38 +13,58 @@ const outputFilePath = path.resolve(__dirname, "../../processed_data.json");
 
 dotenv.config();
 
-// preProcess
-const dataLoader = new DataLoader(filePath);
-const loadedData = dataLoader.loadData();
+class LlmChain {
+  constructor() {
+    // preProcess
+    this.dataLoader = new DataLoader(filePath);
+    this.loadedData = this.dataLoader.loadData();
 
-const splitter = new TextSplitter();
-const processedData = splitter.splitText(loadedData);
-const limitedData = processedData.slice(0, 20);
+    this.splitter = new TextSplitter();
+    this.processedData = this.splitter.splitText(this.loadedData);
+    this.limitedData = this.processedData.slice(0, 100);
+    // this.questionOnlyData = limitedData.map((item) => ({
+    //   question: item.question,
+    // }));
 
-// json save
-if (!fs.existsSync(outputFilePath)) {
-  fs.writeFileSync(
-    outputFilePath,
-    JSON.stringify(processedData, null, 2),
-    "utf-8"
-  );
-  console.log(`Processed data saved to ${outputFilePath}`);
-} else {
-  console.log(`File already exists at ${outputFilePath}, skipping write.`);
+    // json save
+    this.#saveJson(outputFilePath, this.processedData);
+
+    // store
+    this.vectorStore = new VectorStore(
+      process.env.OPENAI_API_KEY,
+      process.env.VECTOR_DB_URL,
+      process.env.VECTOR_DB_QUESTION_COLLECTION_NAME,
+      process.env.VECTOR_DB_ANSWER_COLLECTION_NAME,
+      this.limitedData
+    );
+    this.#saveData();
+
+    // bm25 init
+    // this.bm25 = new BM25Search(this.questionOnlyData);
+  }
+
+  async #saveData() {
+    await this.vectorStore.saveQuestionData();
+    await this.vectorStore.saveAnswersData();
+  }
+
+  #saveJson(outputFilePath, processedData) {
+    if (!fs.existsSync(outputFilePath)) {
+      fs.writeFileSync(
+        outputFilePath,
+        JSON.stringify(processedData, null, 2),
+        "utf-8"
+      );
+
+      console.log(`Processed data saved to ${outputFilePath}`);
+    } else {
+      console.log(`File already exists at ${outputFilePath}, skipping write.`);
+    }
+  }
+
+  vectorStoreQuery() {
+    this.vectorStore.queryData(query);
+  }
 }
 
-// store
-const vectorStore = new VectorStore(
-  process.env.OPENAI_API_KEY,
-  process.env.VECTOR_DB_URL,
-  process.env.VECTOR_DB_QUESTION_COLLECTION_NAME,
-  process.env.VECTOR_DB_ANSWER_COLLECTION_NAME,
-  limitedData
-);
-await vectorStore.saveQuestionData();
-await vectorStore.saveAnswersData();
-
-export const queryResult = await vectorStore.checkCollectionStatus("answers");
-// await vectorStore.queryData("안녕?")
-
-// retrieval
+export default LlmChain;
