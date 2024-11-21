@@ -1,6 +1,11 @@
 import { ChromaClient } from "chromadb";
+import dotenv from "dotenv";
 
-const client = new ChromaClient();
+dotenv.config();
+
+const client = new ChromaClient({
+  host: process.env.VECTOR_DB_URL,
+});
 
 const initializeChroma = async () => {
   try {

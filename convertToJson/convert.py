@@ -13,4 +13,4 @@ def convert_pkl_to_json(pkl_file_path, json_file_path):
     except Exception as e:
         print(f"Error occurred: {e}")
 
-convert_pkl_to_json('../final_result.pkl', '../final_result.json')
+convert_pkl_to_json('final_result.pkl', '../final_result.json')
