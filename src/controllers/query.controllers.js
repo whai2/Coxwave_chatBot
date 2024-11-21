@@ -5,6 +5,7 @@ export const queryAndAnswer = async (req, res) => {
     const { query } = req.body;
     const answer = "hi";
     const llmChain = new LlmChain();
+    llmChain.vectorStoreQuery(query);
 
     return res.status(200).json({ query: query, answer: answer });
   } catch (error) {

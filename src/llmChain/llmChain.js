@@ -62,7 +62,7 @@ class LlmChain {
     }
   }
 
-  vectorStoreQuery() {
+  vectorStoreQuery(query) {
     this.vectorStore.queryData(query);
   }
 }
