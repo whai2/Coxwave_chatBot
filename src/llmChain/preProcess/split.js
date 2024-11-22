@@ -48,7 +48,7 @@ class TextSplitter {
 
         processedData.push({
           id,
-          question,
+          question: question.replace(/\[.*?\]\s*/, ""),
           answerChunks,
           relatedHelp,
         });

@@ -5,6 +5,7 @@ import fs from "fs";
 
 import { DataLoader, TextSplitter } from "./preProcess/index.js";
 import { VectorStore, BM25Search } from "./storeAndRetrieval/index.js";
+import { LLMGenerator } from "./generateAnswer/index.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -13,7 +14,7 @@ const outputFilePath = path.resolve(__dirname, "../../processed_data.json");
 
 dotenv.config();
 
-class LlmChain {
+class LLMChain {
   constructor() {
     // preProcess
     this.dataLoader = new DataLoader(filePath);
@@ -37,10 +38,12 @@ class LlmChain {
       process.env.VECTOR_DB_ANSWER_COLLECTION_NAME,
       this.limitedData
     );
-    this.#saveData();
 
     // bm25 init
     // this.bm25 = new BM25Search(this.questionOnlyData);
+
+    // generate
+    this.llmGenerator = new LLMGenerator(process.env.OPENAI_API_KEY);
   }
 
   async #saveData() {
@@ -62,9 +65,29 @@ class LlmChain {
     }
   }
 
-  vectorStoreQuery(query) {
-    this.vectorStore.queryData(query);
+  async vectorStoreQueryAndResponse(query) {
+    await this.#saveData();
+
+    const result = await this.vectorStore.queryData(query);
+    // console.log(result.ids[0][0]);
+    const answer = this.#findAnswerAboutQuery(result.ids[0][1]);
+    const response = await this.#responseGenerate(query, answer.answerChunks);
+    return response;
+  }
+
+  #findAnswerAboutQuery(id) {
+    const answer = this.limitedData.find((item) => item.id === id);
+
+    if (answer) {
+      return answer;
+    }
+
+    return [];
+  }
+
+  async #responseGenerate(question, answerChunks) {
+    return await this.llmGenerator.getResponse(question, answerChunks);
   }
 }
 
-export default LlmChain;
+export default LLMChain;

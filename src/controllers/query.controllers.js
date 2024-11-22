@@ -1,13 +1,15 @@
-import LlmChain from "../llmChain/llmChain.js";
+import LLMChain from "../llmChain/llmChain.js";
 
 export const queryAndAnswer = async (req, res) => {
   try {
     const { query } = req.body;
     const answer = "hi";
-    const llmChain = new LlmChain();
-    llmChain.vectorStoreQuery(query);
+    const llmChain = new LLMChain();
+    const response = await llmChain.vectorStoreQueryAndResponse(query);
 
-    return res.status(200).json({ query: query, answer: answer });
+    return res
+      .status(200)
+      .json({ query: query, answer: answer, response: response });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

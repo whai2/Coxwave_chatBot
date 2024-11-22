@@ -86,7 +86,9 @@ class VectorStore {
       );
 
       if (newQuestions.length === 0) {
-        console.log("All questions already exist in the question collection. Skipping.");
+        console.log(
+          "All questions already exist in the question collection. Skipping."
+        );
         return;
       }
 
@@ -131,7 +133,9 @@ class VectorStore {
         .filter((item) => !existingIds.has(item.id));
 
       if (filteredData.length === 0) {
-        console.log("All answers already exist in the answer collection. Skipping.");
+        console.log(
+          "All answers already exist in the answer collection. Skipping."
+        );
         return; // 얼리 리턴
       }
 
@@ -167,7 +171,7 @@ class VectorStore {
         nResults: 20, // to be reRank
       });
 
-      console.log("Query Results:", results);
+      return results;
     } catch (error) {
       console.error("Error querying data:", error.message);
     }
