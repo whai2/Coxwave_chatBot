@@ -1,10 +1,13 @@
 import OpenAI from "openai";
 
+import Prompt from "./prompt.js";
+
 class LLMGenerator {
   constructor(openaiApiKey, model = "gpt-4") {
     this.openai = new OpenAI({ apiKey: openaiApiKey });
     this.model = model;
     this.history = [];
+    this.prompt = new Prompt();
     // this.context = [];
   }
 
@@ -77,6 +80,27 @@ class LLMGenerator {
     } catch (error) {
       console.error("Error generating response:", error.message);
       throw new Error("Failed to generate response");
+    }
+  }
+
+  async generateQueryPrompt(query) {
+    const queryPromptTemplate = this.prompt.queryPrompt(query);
+
+    try {
+      const completion = await this.openai.chat.completions.create({
+        model: this.model,
+        messages: [{ role: "system", content: queryPromptTemplate }],
+        max_tokens: 100,
+        temperature: 0.7,
+      });
+
+      const response = completion.choices[0].message.content.trim();
+      console.log(response)
+
+      return response;
+    } catch (error) {
+      console.error("Error generating query response:", error.message);
+      throw new Error("Failed to generate query response");
     }
   }
 

@@ -48,7 +48,7 @@ class LLMChain {
 
   async #saveData() {
     await this.vectorStore.saveQuestionData();
-    await this.vectorStore.saveAnswersData();
+    // await this.vectorStore.saveAnswersData(); // TODO: 답변에 대한 rag 기능은 아직 필요 없는 기능이라 비활성화
   }
 
   #saveJson(outputFilePath, processedData) {
@@ -68,10 +68,21 @@ class LLMChain {
   async vectorStoreQueryAndResponse(query) {
     await this.#saveData();
 
-    const result = await this.vectorStore.queryData(query);
-    // console.log(result.ids[0][0]);
+    // RAG 강화: 쿼리 프롬프트 적용
+    const queryResponse = await this.llmGenerator.generateQueryPrompt(query);
+
+    // retrieval
+    const result = await this.vectorStore.queryData(queryResponse);
     const answer = this.#findAnswerAboutQuery(result.ids[0][1]);
-    const response = await this.#responseGenerate(query, answer.answerChunks);
+
+    // generate response
+    const response = await this.llmGenerator.getResponse(
+      query,
+      answer.answerChunks
+    );
+
+    console.log(queryResponse)
+
     return response;
   }
 
@@ -83,10 +94,6 @@ class LLMChain {
     }
 
     return [];
-  }
-
-  async #responseGenerate(question, answerChunks) {
-    return await this.llmGenerator.getResponse(question, answerChunks);
   }
 }
 
