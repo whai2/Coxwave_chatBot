@@ -14,6 +14,9 @@ const outputFilePath = path.resolve(__dirname, "../../processed_data.json");
 
 dotenv.config();
 
+const RESPONSE_FAULTY_QUERY =
+  "저는 스마트 스토어 FAQ를 위한 챗봇입니다. 스마트 스토어에 대한 질문을 부탁드립니다. (false)";
+
 class LLMChain {
   constructor() {
     // preProcess
@@ -71,6 +74,14 @@ class LLMChain {
     // RAG 강화: 쿼리 프롬프트 적용
     const queryResponse = await this.llmGenerator.generateQueryPrompt(query);
 
+    // 관계 없는 질문 1차 선별
+    if (
+      queryResponse.includes(RESPONSE_FAULTY_QUERY) ||
+      queryResponse.includes("(false)")
+    ) {
+      return RESPONSE_FAULTY_QUERY.replace("(false)", "").trim();
+    }
+
     // retrieval
     const result = await this.vectorStore.queryData(queryResponse);
     const answer = this.#findAnswerAboutQuery(result.ids[0][1]);
@@ -80,8 +91,6 @@ class LLMChain {
       query,
       answer.answerChunks
     );
-
-    console.log(queryResponse)
 
     return response;
   }
