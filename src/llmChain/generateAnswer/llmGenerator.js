@@ -95,7 +95,6 @@ class LLMGenerator {
       });
 
       const response = completion.choices[0].message.content.trim();
-      console.log(response)
 
       return response;
     } catch (error) {
