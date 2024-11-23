@@ -68,7 +68,7 @@ class LLMChain {
     }
   }
 
-  async vectorStoreQueryAndResponse(query) {
+  async queryAndRagResponse(query) {
     await this.#saveData();
 
     // RAG 강화: 쿼리 프롬프트 적용
@@ -84,7 +84,7 @@ class LLMChain {
 
     // retrieval
     const result = await this.vectorStore.queryData(queryResponse);
-    const answer = this.#findAnswerAboutQuery(result.ids[0][1]);
+    const answer = this.#findAnswerAboutQuery(result.ids[0][0]);
 
     // generate response
     const response = await this.llmGenerator.getResponse(
@@ -95,7 +95,7 @@ class LLMChain {
     return response;
   }
 
-  async vectorStoreQueryAndPostRagPromptResponse(query) {
+  async queryAndPostRagPromptResponse(query) {
     await this.#saveData();
 
     // RAG 강화: 쿼리 프롬프트 적용
