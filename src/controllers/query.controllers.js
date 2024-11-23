@@ -5,7 +5,7 @@ export const queryAndAnswer = async (req, res) => {
     const { query } = req.body;
     const answer = "hi";
     const llmChain = new LLMChain();
-    const response = await llmChain.vectorStoreQueryAndResponse(query);
+    const response = await llmChain.vectorStoreQueryAndPostRagPromptResponse(query);
 
     return res
       .status(200)

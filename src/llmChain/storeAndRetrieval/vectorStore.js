@@ -168,7 +168,7 @@ class VectorStore {
     try {
       const results = await this.questionCollection.query({
         queryTexts: [userQuery],
-        nResults: 20, // to be reRank
+        nResults: 10, // to be reRank
       });
 
       return results;

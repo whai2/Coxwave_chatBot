@@ -83,6 +83,29 @@ class LLMGenerator {
     }
   }
 
+  async getResponseAboutPostRagPrompt(query, answers) {
+    const prompt = this.prompt.postRagPrompt(query, answers);
+
+    try {
+      const completion = await this.openai.chat.completions.create({
+        model: this.model,
+        messages: [{ role: "system", content: prompt }],
+        max_tokens: 1000,
+        temperature: 0.7,
+      });
+
+      const botResponse = completion.choices[0].message.content.trim();
+
+      // 히스토리에 추가
+      this.addHistory(query, botResponse);
+
+      return botResponse;
+    } catch (error) {
+      console.error("Error generating response:", error.message);
+      throw new Error("Failed to generate response");
+    }
+  }
+
   async generateQueryPrompt(query) {
     const queryPromptTemplate = this.prompt.queryPrompt(query);
 

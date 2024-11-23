@@ -95,6 +95,33 @@ class LLMChain {
     return response;
   }
 
+  async vectorStoreQueryAndPostRagPromptResponse(query) {
+    await this.#saveData();
+
+    // RAG 강화: 쿼리 프롬프트 적용
+    const queryResponse = await this.llmGenerator.generateQueryPrompt(query);
+
+    // 관계 없는 질문 1차 선별
+    if (
+      queryResponse.includes(RESPONSE_FAULTY_QUERY) ||
+      queryResponse.includes("(false)")
+    ) {
+      return RESPONSE_FAULTY_QUERY.replace("(false)", "").trim();
+    }
+
+    // retrieval
+    const result = await this.vectorStore.queryData(queryResponse); // 10개로 지정
+    const answers = this.#findAnswersAboutQuery(result.ids[0]);
+
+    // generate response
+    const response = await this.llmGenerator.getResponseAboutPostRagPrompt(
+      query,
+      answers
+    );
+
+    return response;
+  }
+
   #findAnswerAboutQuery(id) {
     const answer = this.limitedData.find((item) => item.id === id);
 
@@ -103,6 +130,16 @@ class LLMChain {
     }
 
     return [];
+  }
+
+  #findAnswersAboutQuery(ids) {
+    if (!Array.isArray(ids)) {
+      throw new Error("The parameter 'ids' must be an array.");
+    }
+
+    const answers = this.limitedData.filter((item) => ids.includes(item.id));
+
+    return answers;
   }
 }
 
