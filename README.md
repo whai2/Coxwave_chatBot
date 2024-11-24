@@ -213,4 +213,6 @@
 ### 1. stream + websocket
 
 - 현재 적용한 stream은 `res.setHeader("Content-Type", "text/event-stream");`로 이벤트로 적용됨. 이를 websocket을 적용해, 사용성 개선 가능.
+
+### 2. 추가 RAG, Post RAG 아키텍쳐
 - python 마이그레이션 및, BM25, reRank 도입: 현재 js 라이브러리 및, 모델에서는 한국어 지원이 어려움. python으로 마이그레이션을 진행하거나, child_process를 도입해, 2가지 언어로 하이브리드 가능.
