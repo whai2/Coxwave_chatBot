@@ -181,12 +181,13 @@ class VectorStore {
   }
 
   async queryData(userQuery) {
+    console.log(userQuery)
     try {
       const results = await this.questionCollection.query({
         queryTexts: [userQuery],
         nResults: 10, // to be reRank
       });
-
+      console.log(results);
       return results;
     } catch (error) {
       console.error("Error querying data:", error.message);
