@@ -81,7 +81,7 @@ class LLMChain {
 
     // 관계 없는 질문 1차 선별
     if (queryResponse.includes(RESPONSE_FAULTY_QUERY)) {
-      return RESPONSE_FAULTY_QUERY + "\n-회원 가입 절차를 안내할까요?";
+      return RESPONSE_FAULTY_QUERY + RELATED_FAULTY_HELP;
     }
 
     // retrieval
