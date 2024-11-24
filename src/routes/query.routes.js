@@ -8,6 +8,6 @@ import {
 const router = express.Router();
 
 router.post("/rag", queryAndResponse);
-router.post("/postRag,", queryAndResponseWithPostRagPrompt);
+router.post("/postRag", queryAndResponseWithPostRagPrompt);
 
 export default router;
