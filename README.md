@@ -73,7 +73,10 @@
 
 ---
 
-## 아키텍처
+## 아키텍쳐
+
+- 시각화: https://www.figma.com/board/wmTWHUHPVz5uJaiqsYlPxf/Untitled?node-id=0-1&t=HQzi4qxrwmgnA8rs-1
+
 
 ### 1. API 서버 영역
 
