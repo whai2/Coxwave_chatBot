@@ -24,7 +24,7 @@ class LLMGenerator {
     }
   }
 
-  async generateResponse(question, labelContent = [], relatedHelp) {
+  async generateStream(question, labelContent = [], relatedHelp) {
     const prompt = this.prompt.vanillaPrompt(
       question,
       labelContent,
@@ -33,7 +33,7 @@ class LLMGenerator {
     );
 
     try {
-      const completion = await this.openai.chat.completions.create({
+      const stream = await this.openai.chat.completions.create({
         model: this.model,
         messages: [
           { role: "system", content: prompt },
@@ -41,25 +41,21 @@ class LLMGenerator {
         ],
         max_tokens: 1000,
         temperature: 0.7,
+        stream: true,
       });
 
-      const botResponse = completion.choices[0].message.content.trim();
-
-      // 히스토리에 추가
-      this.addHistory(question, botResponse);
-
-      return botResponse;
+      return stream;
     } catch (error) {
       console.error("Error generating response:", error.message);
       throw new Error("Failed to generate response");
     }
   }
 
-  async generateResponseWithPostRagPrompt(query, answers) {
+  async generateStreamWithPostRagPrompt(query, answers) {
     const prompt = this.prompt.postRagPrompt(query, answers);
 
     try {
-      const completion = await this.openai.chat.completions.create({
+      const stream = await this.openai.chat.completions.create({
         model: this.model,
         messages: [
           { role: "system", content: prompt },
@@ -67,14 +63,10 @@ class LLMGenerator {
         ],
         max_tokens: 1000,
         temperature: 0.7,
+        stream: true,
       });
 
-      const botResponse = completion.choices[0].message.content.trim();
-
-      // 히스토리에 추가
-      this.addHistory(query, botResponse);
-
-      return botResponse;
+      return stream;
     } catch (error) {
       console.error("Error generating response:", error.message);
       throw new Error("Failed to generate response");

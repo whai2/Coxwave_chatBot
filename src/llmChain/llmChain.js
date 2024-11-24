@@ -69,6 +69,10 @@ class LLMChain {
     }
   }
 
+  saveHistory(userMessage, botResponse) {
+    this.llmGenerator.addHistory(userMessage, botResponse);
+  }
+
   async queryAndRagResponse(query) {
     await this.#saveData();
 
@@ -90,13 +94,13 @@ class LLMChain {
     }
 
     // generate response
-    const response = await this.llmGenerator.generateResponse(
+    const stream = await this.llmGenerator.generateStream(
       query,
       answer.answerChunks,
       answer.relatedHelp
     );
 
-    return response;
+    return stream;
   }
 
   async queryAndResponseWithPostRagPrompt(query) {
@@ -120,7 +124,7 @@ class LLMChain {
     }
 
     // generate response
-    const response = await this.llmGenerator.generateResponseWithPostRagPrompt(
+    const response = await this.llmGenerator.generateStreamWithPostRagPrompt(
       query,
       answers
     );
