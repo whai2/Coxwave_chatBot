@@ -50,7 +50,7 @@ class LLMChain {
     this.llmGenerator = new LLMGenerator(process.env.OPENAI_API_KEY);
   }
 
-  async #saveData() {
+  async saveData() {
     await this.vectorStore.saveQuestionData();
     // await this.vectorStore.saveAnswersData(); // TODO: 답변에 대한 rag 기능은 아직 필요 없는 기능이라 비활성화
   }
@@ -74,7 +74,7 @@ class LLMChain {
   }
 
   async queryAndRagResponse(query) {
-    await this.#saveData();
+    await this.saveData();
 
     // RAG 강화: 쿼리 프롬프트 적용
     const queryResponse = await this.llmGenerator.generateQueryPrompt(query);
@@ -104,7 +104,7 @@ class LLMChain {
   }
 
   async queryAndResponseWithPostRagPrompt(query) {
-    await this.#saveData();
+    await this.saveData();
 
     // RAG 강화: 쿼리 프롬프트 적용
     const queryResponse = await this.llmGenerator.generateQueryPrompt(query);

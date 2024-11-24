@@ -1,6 +1,7 @@
 import LLMChain from "../llmChain/llmChain.js";
 
 const llmChain = new LLMChain();
+llmChain.saveData();
 
 export const queryAndResponse = async (req, res) => {
   try {

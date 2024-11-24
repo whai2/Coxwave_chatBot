@@ -1,5 +1,50 @@
 # 콕스웨이브 과제: RAG 기반 스마트스토어 FAQ 챗봇
 
+---
+
+## 실행 방법
+
+### 1. git clone 및 의존성 설치
+
+```bash
+  git clone https://github.com/whai2/Coxwave_chatBot.git
+  cd Coxwave_chatBot
+  npm i
+```
+
+### 2. 환경 설정 파일 
+
+- .env 파일을 생성합니다. 아래와 같은 형태의 환경 변수를 넣습니다.
+
+```.env
+  PORT=3000
+  VECTOR_DB_URL=http://localhost:8000
+  VECTOR_DB_COLLECTION_NAME=your_collection_name
+  VECTOR_DB_QUESTION_COLLECTION_NAME=your_question_collection_name
+  VECTOR_DB_ANSWER_COLLECTION_NAME=your_answer_collection_name
+  OPENAI_API_KEY=your_openai_api_key
+```
+
+### 3. chroma db 설치
+
+- 공식 문서에 나온 설치 방법을 따라합니다. (https://docs.trychroma.com/getting-started)
+- 도커로 설치합니다.
+
+```docker
+  docker pull chromadb/chroma
+  docker run -p 8000:8000 chromadb/chroma
+```
+
+### 4. 서버 실행
+
+- 서버를 실행합니다.
+
+```bash
+  npm run server
+```
+
+---
+
 ## 개요
 
 **스마트스토어 FAQ 챗봇**은 스마트스토어 플랫폼에 대한 사용자 질문에 대해 정확하고 효율적인 답변을 제공합니다.
