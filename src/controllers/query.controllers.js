@@ -1,6 +1,6 @@
 import LLMChain from "../llmChain/llmChain.js";
 
-export const queryAndAnswer = async (req, res) => {
+export const queryAndResponse = async (req, res) => {
   try {
     const { query } = req.body;
     const llmChain = new LLMChain();
@@ -14,11 +14,11 @@ export const queryAndAnswer = async (req, res) => {
   }
 };
 
-export const queryAndAnswerWithPostRagPrompt = async (req, res) => {
+export const queryAndResponseWithPostRagPrompt = async (req, res) => {
   try {
     const { query } = req.body;
     const llmChain = new LLMChain();
-    const response = await llmChain.queryAndPostRagPromptResponse(query);
+    const response = await llmChain.queryAndResponseWithPostRagPrompt(query);
 
     return res
       .status(200)

@@ -15,7 +15,8 @@ const outputFilePath = path.resolve(__dirname, "../../processed_data.json");
 dotenv.config();
 
 const RESPONSE_FAULTY_QUERY =
-  "저는 스마트 스토어 FAQ를 위한 챗봇입니다. 스마트 스토어에 대한 질문을 부탁드립니다. (false)";
+  "저는 스마트 스토어 FAQ를 위한 챗봇입니다. 스마트 스토어에 대한 질문을 부탁드립니다.";
+const RELATED_FAULTY_HELP = "\n-회원 가입 절차를 안내할까요?";
 
 class LLMChain {
   constructor() {
@@ -25,7 +26,7 @@ class LLMChain {
 
     this.splitter = new TextSplitter();
     this.processedData = this.splitter.splitText(this.loadedData);
-    this.limitedData = this.processedData.slice(0, 100);
+    this.limitedData = this.processedData.slice(0, 2717);
     // this.questionOnlyData = limitedData.map((item) => ({
     //   question: item.question,
     // }));
@@ -75,46 +76,51 @@ class LLMChain {
     const queryResponse = await this.llmGenerator.generateQueryPrompt(query);
 
     // 관계 없는 질문 1차 선별
-    if (
-      queryResponse.includes(RESPONSE_FAULTY_QUERY) ||
-      queryResponse.includes("(false)")
-    ) {
-      return RESPONSE_FAULTY_QUERY.replace("(false)", "").trim();
+    if (queryResponse.includes(RESPONSE_FAULTY_QUERY)) {
+      return RESPONSE_FAULTY_QUERY + "\n-회원 가입 절차를 안내할까요?";
     }
 
     // retrieval
     const result = await this.vectorStore.queryData(queryResponse);
     const answer = this.#findAnswerAboutQuery(result.ids[0][0]);
 
+    // 관계 없는 질문 2차 선별
+    if (result.distances[0][0] > 0.3) {
+      return RESPONSE_FAULTY_QUERY + RELATED_FAULTY_HELP;
+    }
+
     // generate response
-    const response = await this.llmGenerator.getResponse(
+    const response = await this.llmGenerator.generateResponse(
       query,
-      answer.answerChunks
+      answer.answerChunks,
+      answer.relatedHelp
     );
 
     return response;
   }
 
-  async queryAndPostRagPromptResponse(query) {
+  async queryAndResponseWithPostRagPrompt(query) {
     await this.#saveData();
 
     // RAG 강화: 쿼리 프롬프트 적용
     const queryResponse = await this.llmGenerator.generateQueryPrompt(query);
 
     // 관계 없는 질문 1차 선별
-    if (
-      queryResponse.includes(RESPONSE_FAULTY_QUERY) ||
-      queryResponse.includes("(false)")
-    ) {
-      return RESPONSE_FAULTY_QUERY.replace("(false)", "").trim();
+    if (queryResponse.includes(RESPONSE_FAULTY_QUERY)) {
+      return RESPONSE_FAULTY_QUERY + RELATED_FAULTY_HELP;
     }
 
     // retrieval
     const result = await this.vectorStore.queryData(queryResponse); // 10개로 지정
     const answers = this.#findAnswersAboutQuery(result.ids[0]);
 
+    // 관계 없는 질문 2차 선별
+    if (result.distances[0][0] > 0.31) {
+      return RESPONSE_FAULTY_QUERY + RELATED_FAULTY_HELP;
+    }
+
     // generate response
-    const response = await this.llmGenerator.getResponseAboutPostRagPrompt(
+    const response = await this.llmGenerator.generateResponseWithPostRagPrompt(
       query,
       answers
     );

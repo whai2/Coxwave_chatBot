@@ -1,13 +1,13 @@
 import express from "express";
 
 import {
-  queryAndAnswer,
-  queryAndAnswerWithPostRagPrompt,
+  queryAndResponse,
+  queryAndResponseWithPostRagPrompt,
 } from "../controllers/query.controllers.js";
 
 const router = express.Router();
 
-router.post("/rag", queryAndAnswer);
-router.post("/postRag,", queryAndAnswerWithPostRagPrompt);
+router.post("/rag", queryAndResponse);
+router.post("/postRag,", queryAndResponseWithPostRagPrompt);
 
 export default router;

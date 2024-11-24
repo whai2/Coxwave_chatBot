@@ -92,19 +92,35 @@ class VectorStore {
         return;
       }
 
-      // 처음인 경우
-      const questions = this.processedData.map((item) => item.question);
-      const metadatas = this.processedData.map((item) => ({
-        relatedHelp: item.relatedHelp || null,
-        id: item.id,
-      }));
-      const ids = this.processedData.map((item) => item.id);
+      // 처음인 경우: 100개로 끊어서 저장. 아니면 Chroma db 오류
+      const batchSize = 100;
+      const totalBatches = Math.ceil(this.processedData.length / batchSize);
 
-      await this.questionCollection.add({
-        documents: questions,
-        metadatas: metadatas,
-        ids: ids,
-      });
+      for (let i = 0; i < totalBatches; i++) {
+        const start = i * batchSize;
+        const end = start + batchSize;
+
+        // 현재 배치 데이터 추출
+        const batchData = this.processedData.slice(start, end);
+
+        const questions = batchData.map((item) => item.question);
+        const metadatas = batchData.map((item) => ({
+          relatedHelp: item.relatedHelp || null,
+          id: item.id,
+        }));
+        const ids = batchData.map((item) => item.id);
+        try {
+          await this.questionCollection.add({
+            documents: questions,
+            metadatas: metadatas,
+            ids: ids,
+          });
+          console.log(`Batch ${i + 1}/${totalBatches} added successfully.`);
+        } catch (error) {
+          console.error(`Error adding batch ${i + 1}:`, error.message);
+          throw error;
+        }
+      }
     } catch (error) {
       console.error("Error saving question data to ChromaDB:", error.message);
       throw new Error("Failed to save question data to ChromaDB");

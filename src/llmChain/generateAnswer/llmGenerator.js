@@ -1,6 +1,7 @@
 import OpenAI from "openai";
 
 import Prompt from "./prompt.js";
+import { USER_QUESTION, LLM_ANSWER, LLM_FAULTY_ANSWER } from "./constants.js";
 
 class LLMGenerator {
   constructor(openaiApiKey, model = "gpt-4") {
@@ -8,65 +9,36 @@ class LLMGenerator {
     this.model = model;
     this.history = [];
     this.prompt = new Prompt();
-    // this.context = [];
   }
 
   // 이전 대화 기록 추가
   addHistory(userMessage, botResponse) {
+    // 만약 답변이 이상할 경우, 히스토리 저장 x. 맥락 흐리기 차단.
+    if (botResponse.includes(LLM_FAULTY_ANSWER)) return;
+
     this.history.push({ role: "user", content: userMessage });
     this.history.push({ role: "assistant", content: botResponse });
+
+    while (this.history.length > 5) {
+      this.history.shift();
+    }
   }
 
-  // 컨텍스트 업데이트
-  // updateContext(newContext = []) {
-  //   this.context = [...this.context, ...newContext];
-  // }
-
-  // 프롬프트 생성
-  generatePrompt(question, labelContent = []) {
-    let prompt =
-      "You are a helpful assistant specializing in providing precise and helpful responses.\n";
-
-    // 대화 히스토리 추가
-    if (this.history.length > 0) {
-      prompt += "\nHere is the conversation history:\n";
-      this.history.forEach((entry) => {
-        prompt += `${entry.role === "user" ? "User" : "Assistant"}: ${
-          entry.content
-        }\n`;
-      });
-    }
-
-    // 레이블 콘텐츠 추가
-    if (labelContent.length > 0) {
-      prompt += "\nHere are some useful references:\n";
-      labelContent.forEach((content, index) => {
-        prompt += `Reference ${index + 1}: ${content}\n`;
-      });
-    }
-
-    // 질문 및 컨텍스트 추가
-    prompt += `\nThe user asked: "${question}"\n`;
-    // if (this.context.length > 0) {
-    //   prompt += "Here is some additional context:\n";
-    //   this.context.forEach((ctx, index) => {
-    //     prompt += `- ${ctx}\n`;
-    //   });
-    // }
-
-    prompt +=
-      "\nPlease provide a clear and natural response that references the relevant information above.";
-    return prompt;
-  }
-
-  // OpenAI API 호출
-  async getResponse(question, labelContent = []) {
-    const prompt = this.generatePrompt(question, labelContent);
+  async generateResponse(question, labelContent = [], relatedHelp) {
+    const prompt = this.prompt.vanillaPrompt(
+      question,
+      labelContent,
+      relatedHelp,
+      this.history
+    );
 
     try {
       const completion = await this.openai.chat.completions.create({
         model: this.model,
-        messages: [{ role: "system", content: prompt }],
+        messages: [
+          { role: "system", content: prompt },
+          // ...this.history,
+        ],
         max_tokens: 1000,
         temperature: 0.7,
       });
@@ -83,13 +55,16 @@ class LLMGenerator {
     }
   }
 
-  async getResponseAboutPostRagPrompt(query, answers) {
+  async generateResponseWithPostRagPrompt(query, answers) {
     const prompt = this.prompt.postRagPrompt(query, answers);
 
     try {
       const completion = await this.openai.chat.completions.create({
         model: this.model,
-        messages: [{ role: "system", content: prompt }],
+        messages: [
+          { role: "system", content: prompt },
+          // ...this.history,
+        ],
         max_tokens: 1000,
         temperature: 0.7,
       });
@@ -113,7 +88,7 @@ class LLMGenerator {
       const completion = await this.openai.chat.completions.create({
         model: this.model,
         messages: [{ role: "system", content: queryPromptTemplate }],
-        max_tokens: 100,
+        max_tokens: 200,
         temperature: 0.7,
       });
 
@@ -129,7 +104,6 @@ class LLMGenerator {
   // 히스토리 및 컨텍스트 초기화
   reset() {
     this.history = [];
-    // this.context = [];
   }
 }
 
