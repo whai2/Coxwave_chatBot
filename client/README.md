@@ -1,50 +1,32 @@
-# React + TypeScript + Vite
+# CoxWave-sdk 사용 예시
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## 도큐먼트
+- docs: https://jumbled-tablecloth-e39.notion.site/CoxWave-SDK-16f8114296a9807fb97cf980fc783baa?pvs=4
 
-Currently, two official plugins are available:
+## 실행 방법
+### 0. 설치
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
-
-- Configure the top-level `parserOptions` property like this:
-
-```js
-export default tseslint.config({
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+```bash
+  npm i coxwave-sdk
 ```
 
-- Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
-- Optionally add `...tseslint.configs.stylisticTypeChecked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
+### 1. React (vite)
+
+- 파일 위치: main.tsx
 
 ```js
-// eslint.config.js
-import react from 'eslint-plugin-react'
+  import { createRoot } from "react-dom/client";
+  
+  import CoxWaveSDK from 'coxwave-sdk'
 
-export default tseslint.config({
-  // Set the react version
-  settings: { react: { version: '18.3' } },
-  plugins: {
-    // Add the react plugin
-    react,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended rules
-    ...react.configs.recommended.rules,
-    ...react.configs['jsx-runtime'].rules,
-  },
-})
+  import App from "./App";
+
+  const coxWaveSDK = new CoxWaveSDK({
+    clientName: "fastCampus",
+    apiKey: "1111",
+  });
+
+  createRoot(document.getElementById("root")!).render(<App />);
+  coxWaveSDK.renderChat();
 ```
+
