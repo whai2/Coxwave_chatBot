@@ -7,7 +7,7 @@
 ### 0. 설치
 
 ```bash
-  npm i coxwave-sdk
+  yarn add coxwave-sdk
 ```
 
 ### 1. React (vite)
